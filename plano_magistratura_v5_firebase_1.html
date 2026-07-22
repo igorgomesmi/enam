@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Plano Magistratura v4 — Igor Gomes Miranda</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+--bg:#FAFAF8;--card:#FFFFFF;--border:#E8E6E1;--text:#1A1A18;--text2:#6B6B66;--text3:#9C9C96;
+--accent:#4338CA;--accent-light:#EEF2FF;--accent-mid:#818CF8;
+--done-bg:#ECFDF5;--done-border:#059669;--done-text:#065F46;
+--warn-bg:#FFF7ED;--warn-border:#D97706;--warn-text:#92400E;
+--danger-bg:#FEF2F2;--danger-border:#EF4444;--danger-text:#991B1B;
+--radius:10px;--radius-lg:14px;--shadow:0 1px 3px rgba(0,0,0,.06);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;}
+.container{max-width:520px;margin:0 auto;padding:12px 16px 120px;}
+.tabs{display:flex;gap:0;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:3px;margin-bottom:14px;position:sticky;top:8px;z-index:100;box-shadow:var(--shadow);}
+.tab{flex:1;padding:9px 6px;border:none;background:transparent;font-size:11px;font-weight:600;color:var(--text3);cursor:pointer;border-radius:var(--radius);font-family:inherit;transition:all .15s;}
+.tab.active{background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(67,56,202,.3);}
+.header{text-align:center;padding:12px 0 6px;}
+.header-title{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--accent);}
+.exam-cd{margin-top:5px;font-size:12px;font-weight:600;color:var(--danger-text);background:var(--danger-bg);display:inline-block;padding:3px 12px;border-radius:20px;}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:10px 0;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:7px 5px;text-align:center;box-shadow:var(--shadow);}
+.stat-val{font-size:15px;font-weight:700;color:var(--accent);}
+.stat-label{font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:.3px;}
+.progress-wrap{margin:8px 0 12px;}
+.progress-bar{height:5px;background:var(--border);border-radius:3px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-mid));border-radius:3px;transition:width .4s;}
+.progress-info{display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:3px;}
+.mo-strip{display:flex;gap:3px;justify-content:center;margin-bottom:10px;}
+.mo-btn{padding:4px 9px;border-radius:20px;border:1px solid var(--border);background:transparent;font-size:10px;cursor:pointer;color:var(--text3);font-family:inherit;font-weight:500;transition:all .15s;}
+.mo-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.day-nav{display:flex;align-items:center;justify-content:space-between;margin:6px 0;gap:6px;}
+.nav-btn{width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:var(--card);cursor:pointer;font-size:15px;color:var(--text2);display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);transition:all .15s;}
+.nav-btn:hover{background:var(--accent-light);color:var(--accent);}
+.nav-btn:disabled{opacity:.3;}
+.nav-center{text-align:center;flex:1;}
+.nav-dow{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);}
+.nav-date{font-size:19px;font-weight:700;}
+.nav-week{font-size:10px;color:var(--text3);}
+.week-dots{display:flex;gap:3px;justify-content:center;margin-bottom:10px;}
+.wd{width:33px;height:33px;border-radius:50%;border:1.5px solid var(--border);background:transparent;cursor:pointer;font-size:11px;font-weight:500;color:var(--text2);transition:all .15s;position:relative;}
+.wd.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+.wd.today:not(.active){border-color:var(--accent);color:var(--accent);}
+.wd.all-done{border-color:var(--done-border);}
+.wd.all-done::after{content:'';position:absolute;bottom:1px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--done-border);}
+
+/* REVIEW BOX */
+.rv-section{border-radius:var(--radius-lg);padding:12px;margin-bottom:10px;border:1.5px solid;overflow:hidden;}
+.rv-header{font-size:12px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.rv-icon{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:700;}
+.rv-item{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid rgba(0,0,0,.06);}
+.rv-item:last-child{border-bottom:none;}
+.rv-tag{font-size:8px;font-weight:700;padding:2px 7px;border-radius:8px;white-space:nowrap;}
+.rv-tag.t24{background:#DBEAFE;color:#1E40AF;}
+.rv-tag.t48{background:#E0E7FF;color:#3730A3;}
+.rv-tag.t30{background:#FCE7F3;color:#9D174D;}
+.rv-tag.t60{background:#FEE2E2;color:#991B1B;}
+.rv-mat{font-size:11px;font-weight:500;flex:1;}
+.rv-tip{font-size:9px;color:var(--text3);font-style:italic;}
+.rv-origin{font-size:9px;color:var(--text3);}
+.rv-check{width:20px;height:20px;border-radius:50%;border:2px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;color:transparent;transition:all .15s;flex-shrink:0;}
+.rv-check.done{background:var(--done-border);border-color:var(--done-border);color:#fff;}
+.rv-how{font-size:10px;color:var(--text3);margin-top:6px;padding:6px 8px;background:rgba(0,0,0,.02);border-radius:var(--radius);line-height:1.5;}
+
+/* EVENT CARD */
+.ev-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:8px;overflow:hidden;box-shadow:var(--shadow);transition:all .15s;}
+.ev-card.completed{background:var(--done-bg);border-color:var(--done-border);}
+.ev-left{width:4px;min-height:100%;}
+.ev-body{padding:10px 12px;}
+.ev-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;}
+.ev-time{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;opacity:.6;}
+.ev-link{font-size:9px;font-weight:700;padding:3px 10px;border-radius:20px;text-decoration:none;color:#fff;}
+.ev-title{font-size:13px;font-weight:600;line-height:1.3;}
+.ev-detail{font-size:10px;opacity:.5;margin-top:2px;line-height:1.4;}
+.ev-leis{margin-top:5px;font-size:10px;color:var(--accent-dark);background:var(--accent-light);padding:6px 8px;border-radius:var(--radius);line-height:1.5;}
+.ev-leis b{font-weight:600;}
+.ev-ctrls{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap;align-items:center;}
+.btn-done{padding:4px 11px;border-radius:20px;border:1.5px solid var(--border);background:transparent;font-size:10px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;}
+.btn-done:hover{border-color:var(--done-border);color:var(--done-border);}
+.btn-done.is-done{background:var(--done-border);color:#fff;border-color:var(--done-border);}
+.pg-input{width:68px;padding:4px 7px;border-radius:20px;border:1.5px solid var(--border);font-size:10px;font-family:'JetBrains Mono',monospace;text-align:center;background:transparent;color:var(--text);}
+.pg-input:focus{outline:none;border-color:var(--accent);}
+.ex-row{display:flex;gap:4px;align-items:center;margin-top:5px;}
+.ex-label{font-size:9px;color:var(--text3);}
+.ex-input{width:36px;padding:3px 5px;border-radius:8px;border:1.5px solid var(--border);font-size:10px;font-family:'JetBrains Mono',monospace;text-align:center;background:transparent;color:var(--text);}
+.ex-input:focus{outline:none;border-color:var(--accent);}
+.ex-pct{font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px;}
+.ex-pct.good{background:#ECFDF5;color:#059669;}
+.ex-pct.mid{background:#FFFBEB;color:#D97706;}
+.ex-pct.bad{background:#FEF2F2;color:#EF4444;}
+.ev-notes{margin-top:5px;}
+.notes-tog{font-size:10px;color:var(--accent);cursor:pointer;font-weight:600;border:none;background:none;font-family:inherit;padding:0;}
+.notes-area{width:100%;margin-top:4px;padding:5px 8px;border-radius:var(--radius);border:1.5px solid var(--border);font-size:11px;font-family:inherit;resize:vertical;min-height:36px;background:transparent;color:var(--text);}
+.notes-area:focus{outline:none;border-color:var(--accent);}
+.jump-row{display:flex;gap:5px;justify-content:center;margin-top:10px;}
+.jump-btn{padding:5px 11px;border-radius:20px;border:1px solid var(--border);background:var(--card);font-size:10px;font-weight:500;cursor:pointer;color:var(--text2);font-family:inherit;box-shadow:var(--shadow);transition:all .15s;}
+.jump-btn:hover{border-color:var(--accent);color:var(--accent);}
+.jump-btn.today-btn{background:var(--accent);color:#fff;border-color:var(--accent);}
+.export-row{text-align:center;margin-top:14px;display:flex;gap:6px;justify-content:center;flex-wrap:wrap;}
+.export-btn{padding:5px 14px;border-radius:20px;border:1px solid var(--border);background:var(--card);font-size:10px;font-weight:500;cursor:pointer;color:var(--text2);font-family:inherit;transition:all .15s;}
+.export-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+/* Analytics */
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px;margin-bottom:10px;box-shadow:var(--shadow);}
+.chart-title{font-size:11px;font-weight:700;margin-bottom:8px;}
+.bar-row{display:flex;align-items:center;gap:6px;margin-bottom:5px;}
+.bar-label{font-size:9px;color:var(--text2);width:80px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bar-track{flex:1;height:12px;background:var(--border);border-radius:6px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:6px;transition:width .4s;}
+.bar-val{font-size:9px;font-weight:600;color:var(--text2);width:32px;text-align:right;}
+.streak-card{text-align:center;padding:16px;}
+.streak-num{font-size:36px;font-weight:700;color:var(--accent);}
+.streak-label{font-size:11px;color:var(--text3);}
+
+/* Timer */
+.timer-section{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;margin-bottom:10px;text-align:center;box-shadow:var(--shadow);}
+.timer-display{font-family:'JetBrains Mono',monospace;font-size:36px;font-weight:700;color:var(--accent);margin:8px 0;}
+.timer-label{font-size:11px;color:var(--text3);margin-bottom:8px;}
+.timer-btns{display:flex;gap:6px;justify-content:center;}
+.timer-btn{padding:6px 16px;border-radius:20px;border:1.5px solid var(--accent);background:transparent;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--accent);transition:all .15s;}
+.timer-btn.primary{background:var(--accent);color:#fff;}
+.timer-modes{display:flex;gap:4px;justify-content:center;margin-bottom:8px;}
+.timer-mode{padding:4px 10px;border-radius:15px;border:1px solid var(--border);background:transparent;font-size:10px;cursor:pointer;font-family:inherit;color:var(--text3);transition:all .15s;}
+.timer-mode.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+
+/* Method explainer */
+.method-box{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;margin-bottom:10px;box-shadow:var(--shadow);}
+.method-title{font-size:12px;font-weight:700;color:var(--accent);margin-bottom:6px;}
+.method-text{font-size:11px;color:var(--text2);line-height:1.6;}
+.method-table{width:100%;font-size:10px;border-collapse:collapse;margin-top:8px;}
+.method-table th{text-align:left;padding:4px 6px;background:var(--accent-light);color:var(--accent);font-weight:600;border-radius:4px;}
+.method-table td{padding:4px 6px;border-bottom:1px solid var(--border);}
+.method-table td:first-child{font-weight:600;color:var(--accent);}
+
+.empty-day{text-align:center;padding:24px;color:var(--text3);font-size:13px;}
+</style>
+</head>
+<body>
+<div class="container" id="app"></div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCflA4j7_CInzOWELcnI0p0fQHhCeo1_YY",
+  authDomain: "planejamento-enam.firebaseapp.com",
+  projectId: "planejamento-enam",
+  storageBucket: "planejamento-enam.firebasestorage.app",
+  messagingSenderId: "549973557137",
+  appId: "1:549973557137:web:bb8d3223252b4ca2e26430"
+};
+const fbApp = initializeApp(firebaseConfig);
+const auth = getAuth(fbApp);
+const db = getFirestore(fbApp);
+let currentUser = null;
+let syncState = 'idle'; // idle | saving | synced | error
+// ========== LINKS ==========
+const LINKS={
+'Administrativo':'https://drive.google.com/file/d/1LYbS-C1VppGyLf09R6kJsypkTkvtWXQo/view',
+'Ambiental':'https://drive.google.com/file/d/1asAnV4bc5df4WNaj_N_4XwseG5c922Zp/view',
+'Civil - Contratos e Reais':'https://drive.google.com/file/d/17M6oFAp5Oe5KPJ9ZD8uuDa1UWlICmql5/view',
+'Civil - Famílias e Sucessões':'https://drive.google.com/file/d/1ZXclEamngBaGY-v3XOlkrI_iolpjWJC2/view',
+'Civil - Obrigações e Responsabilidade':'https://drive.google.com/file/d/1LU3REYvoR-sa50Guu2vbj2bizUzg0uzv/view',
+'Civil - Parte Geral e LINDB':'https://drive.google.com/file/d/15B1lQD9RaR_Qp8KASyr-vKvf-8cghP7A/view',
+'Constitucional':'https://drive.google.com/file/d/1GTlwwm8LK7VeVPTSlimm8jzsAxfOJv1E/view',
+'Consumidor':'https://drive.google.com/file/d/1zmxf1YisnAUhp6PZSqp0CR91eiGxx_0C/view',
+'ECA':'https://drive.google.com/file/d/1dNapTHjwoaLFZdgugZ4Ia7cGzt_Lsds5/view',
+'Eleitoral':'https://drive.google.com/file/d/1gEH2_CTZdzElkjSO_OZMT9zXlcP3WZn4/view',
+'Empresarial':'https://drive.google.com/file/d/1_MTCYoqksc43l2HBGvkvpeL4--XPawoo/view',
+'Legislação penal especial':'https://drive.google.com/file/d/1bqTzClxNaVQ08EfAZnbpShW6C4gmlBce/view',
+'Penal Especial':'https://drive.google.com/file/d/1bbpmLqB8Bo9hPGAby8JTfEEsHEiA40Ci/view',
+'Penal Geral':'https://drive.google.com/file/d/17PH3A1-sIhBd7xGQl7qbu8K_APGwEUa4/view',
+'Processo Civil':'https://drive.google.com/file/d/1IoNqZquukBD9_rYd7e5y3MMZuW237wMi/view',
+'Processo Penal':'https://drive.google.com/file/d/1Sjh89FLhC2FZj-d_Pl_rrFULmPNNvi3J/view',
+'Tributário':'https://drive.google.com/file/d/1WziCyT32mrWzx5QZq1fRaA9JYoYbdtDd/view',
+'Humanos':'https://drive.google.com/drive/folders/15K1O0mpFhdex8Ldq18U1xsWjHVuJNrMK',
+'Humanística':'https://drive.google.com/drive/folders/15K1O0mpFhdex8Ldq18U1xsWjHVuJNrMK',
+};
+const CLRS={
+'Constitucional':{bg:'#EEEDFE',br:'#6366F1',tx:'#3730A3'},'Civil':{bg:'#ECFDF5',br:'#10B981',tx:'#065F46'},
+'Processo Civil':{bg:'#EFF6FF',br:'#3B82F6',tx:'#1E40AF'},'Penal Geral':{bg:'#FFF7ED',br:'#F97316',tx:'#9A3412'},
+'Penal Especial':{bg:'#FDF2F8',br:'#EC4899',tx:'#9D174D'},'Processo Penal':{bg:'#F5F5F4',br:'#78716C',tx:'#44403C'},
+'Tributário':{bg:'#FFFBEB',br:'#F59E0B',tx:'#92400E'},'Empresarial':{bg:'#F0FDF4',br:'#22C55E',tx:'#166534'},
+'Administrativo':{bg:'#EFF6FF',br:'#3B82F6',tx:'#1E40AF'},'Consumidor':{bg:'#EEEDFE',br:'#6366F1',tx:'#3730A3'},
+'Eleitoral':{bg:'#FEF2F2',br:'#EF4444',tx:'#991B1B'},'ECA':{bg:'#ECFDF5',br:'#10B981',tx:'#065F46'},
+'Ambiental':{bg:'#F0FDF4',br:'#22C55E',tx:'#166534'},'Humanos':{bg:'#FDF2F8',br:'#EC4899',tx:'#9D174D'},
+'Humanística':{bg:'#FDF2F8',br:'#EC4899',tx:'#9D174D'},'Legislação penal especial':{bg:'#FFF7ED',br:'#F97316',tx:'#9A3412'},
+'Lei seca':{bg:'#F5F5F4',br:'#78716C',tx:'#44403C'},'Exercícios':{bg:'#FFFBEB',br:'#F59E0B',tx:'#92400E'},
+'Resolver Prova':{bg:'#EFF6FF',br:'#3B82F6',tx:'#1E40AF'},'Informativos':{bg:'#EEEDFE',br:'#6366F1',tx:'#3730A3'},
+'Reforço crítico':{bg:'#FEF2F2',br:'#EF4444',tx:'#991B1B'},
+};
+function gc(l){for(const k in CLRS)if(l.includes(k))return CLRS[k];return{bg:'#F5F5F4',br:'#78716C',tx:'#44403C'};}
+function gl(l){for(const k in LINKS)if(l.includes(k))return LINKS[k];return null;}
+
+// ========== LEI SECA DETAIL ==========
+const LEI_SECA_DETAIL = {
+  seg: {
+    summary: 'Proc. Civil (5p) + Tributário (1p)',
+    leis: [
+      {materia:'Processo Civil', leis:'CPC — priorizar: Parte Geral (arts. 1-69), Tutelas Provisórias (arts. 294-311), Recursos (arts. 994-1044), Execução (arts. 771-925)', pags:'5'},
+      {materia:'Tributário', leis:'CTN — arts. 96-185 (obrigação, crédito, administração tributária) + CF arts. 145-162 (sistema tributário nacional)', pags:'1'},
+    ]
+  },
+  ter: {
+    summary: 'Civil (5p) + Consumidor (1p)',
+    leis: [
+      {materia:'Civil', leis:'CC — conforme ciclo: Parte Geral (arts. 1-232) / Obrigações (arts. 233-420) / Contratos (arts. 421-853) / Reais (arts. 1196-1510) / Família (arts. 1511-1783) / Sucessões (arts. 1784-2027) + LINDB (arts. 1-19)', pags:'5'},
+      {materia:'Consumidor', leis:'CDC (Lei 8.078/90) — arts. 1-54 (direitos básicos, práticas comerciais, proteção contratual, sanções)', pags:'1'},
+    ]
+  },
+  qua: {
+    summary: 'Proc. Penal (3p) + Leg. Penal Esp. (1p) + Penal Geral (1p) + Penal Esp. (1p)',
+    leis: [
+      {materia:'Processo Penal', leis:'CPP — priorizar: Inquérito (arts. 4-23), Ação Penal (arts. 24-62), Provas (arts. 155-250), Prisão (arts. 282-318), Recursos (arts. 574-646), Nulidades (arts. 563-573)', pags:'3'},
+      {materia:'Leg. Penal Especial', leis:'Lei de Drogas (11.343/06), Maria da Penha (11.340/06), Org. Criminosas (12.850/13), Abuso de Autoridade (13.869/19), Execução Penal (7.210/84)', pags:'1'},
+      {materia:'Penal Geral', leis:'CP Parte Geral — arts. 1-120 (aplicação da lei, crime, imputabilidade, penas, medidas de segurança)', pags:'1'},
+      {materia:'Penal Especial', leis:'CP Parte Especial — arts. 121-361 (crimes contra pessoa, patrimônio, dignidade sexual, fé pública, adm. pública)', pags:'1'},
+    ]
+  },
+  qui: {
+    summary: 'Constitucional (3p) + Empresarial (2p) + Eleitoral (1p)',
+    leis: [
+      {materia:'Constitucional', leis:'CF/88 — arts. 1-17 (princípios e direitos fundamentais), art. 5º inteiro, arts. 37-41 (administração pública), arts. 92-126 (Poder Judiciário), arts. 145-162 (tributário)', pags:'3'},
+      {materia:'Empresarial', leis:'CC arts. 966-1195 (direito de empresa) + Lei Falências (11.101/05) — recuperação judicial, falência, plano de recuperação', pags:'2'},
+      {materia:'Eleitoral', leis:'Código Eleitoral (4.737/65) arts. relevantes + Lei Eleições (9.504/97) + LC 64/90 (inelegibilidades)', pags:'1'},
+    ]
+  },
+  sex: {
+    summary: 'Administrativo (3p) + Ambiental (1p) + ECA (1p) + Humanos (1p)',
+    leis: [
+      {materia:'Administrativo', leis:'Lei Improbidade (8.429/92), Nova Licitações (14.133/21) arts. principais, Proc. Adm. Federal (9.784/99), Lei Anticorrupção (12.846/13)', pags:'3'},
+      {materia:'Ambiental', leis:'Código Florestal (12.651/12), Lei Crimes Ambientais (9.605/98), PNMA (6.938/81)', pags:'1'},
+      {materia:'ECA', leis:'ECA (8.069/90) — arts. 1-18, 98-114 (medidas de proteção), 112-128 (medidas socioeducativas), 145-199 (justiça da inf. e juventude)', pags:'1'},
+      {materia:'Humanos', leis:'Convenção Americana (Pacto de San José) + Pacto Int. Direitos Civis e Políticos + CF art. 5º §§ 2º-4º (bloco de constitucionalidade)', pags:'1'},
+    ]
+  }
+};
+
+// ========== DIAGNÓSTICO ENAM 2026.1 (07/06/2026) ==========
+// Resultado real: 38/80 (47,5%) — não habilitado (corte: 56/80 geral, 40/80 ações afirmativas)
+const DIAGNOSTICO_2026_1 = {
+  data:'07/06/2026', total_acertos:38, total_questoes:80, corte_geral:56, corte_af:40,
+  materias:[
+    {nome:'Direito Civil', acertos:9, questoes:12, nivel:'forte'},
+    {nome:'Direito Empresarial', acertos:4, questoes:6, nivel:'forte'},
+    {nome:'Direitos Humanos', acertos:4, questoes:6, nivel:'forte'},
+    {nome:'Direito Penal', acertos:6, questoes:12, nivel:'medio'},
+    {nome:'Direito Constitucional', acertos:7, questoes:16, nivel:'critico'},
+    {nome:'Direito Processual Civil', acertos:4, questoes:12, nivel:'critico'},
+    {nome:'Direito Administrativo', acertos:3, questoes:10, nivel:'critico'},
+    {nome:'Noções Gerais / Form. Humanística', acertos:1, questoes:6, nivel:'critico'},
+  ]
+};
+
+// ========== REVIEW METHOD CONFIG ==========
+const REVIEW_INTERVALS = [
+  {days:1, tag:'24h', cls:'t24', tip:'Revisão rápida: reler grifos e anotações (10-15 min)'},
+  {days:2, tag:'48h', cls:'t48', tip:'Revisão rápida: flashcards e pontos-chave (10-15 min)'},
+  {days:30, tag:'30d', cls:'t30', tip:'Revisão profunda: resolver 5-10 questões do tema (20-30 min)'},
+  {days:60, tag:'60d', cls:'t60', tip:'Revisão profunda: reler artigos-chave + questões (20-30 min)'},
+  {days:120, tag:'120d', cls:'t60', tip:'Revisão final: simulado temático + artigos críticos (20-30 min)'},
+];
+
+// ========== SCHEDULE ==========
+const WP={
+  seg:[{t:'06:30-07:30',l:'Lei seca — 6 pág',ls:'seg',isStudy:true},{t:'18:30-20:00',l:'__M__ — 30 pág',isStudy:true},{t:'20:00-21:00',l:'Exercícios (24 questões)',isEx:true},{t:'21:00-22:00',l:'REVISÃO_BLOCK',isReview:true}],
+  ter:[{t:'06:30-07:30',l:'Lei seca — 6 pág',ls:'ter',isStudy:true},{t:'18:30-20:00',l:'__M__ — 30 pág',isStudy:true},{t:'20:00-21:00',l:'Exercícios (24 questões)',isEx:true},{t:'21:00-22:00',l:'REVISÃO_BLOCK',isReview:true}],
+  qua:[{t:'06:30-07:30',l:'Lei seca — 6 pág',ls:'qua',isStudy:true},{t:'07:30-08:30',l:'__MM__ — 20 pág',isStudy:true},{t:'18:30-20:00',l:'__M__ — 30 pág',isStudy:true},{t:'20:00-21:00',l:'Exercícios (24 questões)',isEx:true},{t:'21:00-22:00',l:'REVISÃO_BLOCK',isReview:true}],
+  qui:[{t:'06:30-07:30',l:'Lei seca — 6 pág',ls:'qui',isStudy:true},{t:'07:30-08:30',l:'__MM__ — 20 pág',isStudy:true},{t:'18:30-20:00',l:'__M__ — 30 pág',isStudy:true},{t:'20:00-21:00',l:'Exercícios (24 questões)',isEx:true},{t:'21:00-22:00',l:'REVISÃO_BLOCK',isReview:true}],
+  sex:[{t:'06:30-07:30',l:'Lei seca — 6 pág',ls:'sex',isStudy:true},{t:'07:30-08:30',l:'Humanos — 20 pág',isStudy:true},{t:'18:30-20:00',l:'__M__ — 30 pág',isStudy:true},{t:'20:00-21:00',l:'Exercícios (24 questões)',isEx:true},{t:'21:00-22:00',l:'REVISÃO_BLOCK',isReview:true}],
+  sA:[{t:'07:00-08:45',l:'__S1__ — 35 pág',isStudy:true},{t:'09:00-11:00',l:'Administrativo — 40 pág',isStudy:true},{t:'14:00-15:00',l:'Exercícios (24 questões)',isEx:true},{t:'15:00-17:00',l:'REVISÃO_BLOCK',isReview:true}],
+  sB:[{t:'07:00-08:45',l:'Humanística — 35 pág',isStudy:true},{t:'09:00-11:00',l:'__S2__ — 40 pág',isStudy:true},{t:'14:00-15:00',l:'Exercícios (24 questões)',isEx:true},{t:'15:00-17:00',l:'REVISÃO_BLOCK',isReview:true}],
+  dP:[{t:'07:00-11:00',l:'Resolver Prova',isStudy:true}],
+  dI:[{t:'07:00-09:30',l:'Informativos STF/STJ',isStudy:true},{t:'09:30-12:00',l:'Reforço crítico — Administrativo/Proc.Civil/Constitucional/Humanística (questões)',isStudy:true}],
+};
+const WC=[
+  {seg:'Constitucional',ter:'Civil - Obrigações e Responsabilidade',quaM:'Penal Geral',qua:'Civil - Famílias e Sucessões',quiM:'Processo Penal',qui:'Empresarial',sex:'Civil - Contratos e Reais',st:'A',s1:'ECA',s2:null,dom:'P'},
+  {seg:'Constitucional',ter:'Processo Civil',quaM:'Penal Geral',qua:'Tributário',quiM:'Processo Penal',qui:'Penal Especial',sex:'Legislação penal especial',st:'B',s1:null,s2:'Administrativo',dom:'I'},
+  {seg:'Constitucional',ter:'Consumidor',quaM:'Penal Geral',qua:'Civil - Parte Geral e LINDB',quiM:'Processo Penal',qui:'Empresarial',sex:'Civil - Contratos e Reais',st:'B',s1:null,s2:'Ambiental',dom:'I'},
+  {seg:'Eleitoral',ter:'Processo Civil',quaM:'Processo Penal',qua:'Civil - Famílias e Sucessões',quiM:'Processo Penal',qui:'Penal Especial',sex:'Legislação penal especial',st:'A',s1:'ECA',s2:null,dom:'I'},
+  {seg:'Constitucional',ter:'Civil - Obrigações e Responsabilidade',quaM:'Penal Geral',qua:'Tributário',quiM:'Processo Penal',qui:'Empresarial',sex:'Legislação penal especial',st:'B',s1:null,s2:'Administrativo',dom:'P'},
+  {seg:'Constitucional',ter:'Processo Civil',quaM:'Penal Geral',qua:'Civil - Parte Geral e LINDB',quiM:'Processo Penal',qui:'Penal Especial',sex:'Civil - Contratos e Reais',st:'B',s1:null,s2:'Administrativo',dom:'I'},
+  {seg:'Constitucional',ter:'Consumidor',quaM:'Penal Geral',qua:'Civil - Famílias e Sucessões',quiM:'Processo Penal',qui:'Empresarial',sex:'Legislação penal especial',st:'A',s1:'ECA',s2:null,dom:'I'},
+  {seg:'Eleitoral',ter:'Civil - Obrigações e Responsabilidade',quaM:'Penal Geral',qua:'Civil - Parte Geral e LINDB',quiM:'Processo Penal',qui:'Penal Especial',sex:'Civil - Contratos e Reais',st:'B',s1:null,s2:'Ambiental',dom:'I'},
+  {seg:'Constitucional',ter:'Processo Civil',quaM:'Penal Geral',qua:'Civil - Famílias e Sucessões',quiM:'Processo Penal',qui:'Empresarial',sex:'Legislação penal especial',st:'B',s1:null,s2:'Administrativo',dom:'I'},
+  {seg:'Eleitoral',ter:'Consumidor',quaM:'Penal Geral',qua:'Civil - Famílias e Sucessões',quiM:'Processo Penal',qui:'Empresarial',sex:'Civil - Contratos e Reais',st:'A',s1:'ECA',s2:null,dom:'P'},
+  {seg:'Constitucional',ter:'Processo Civil',quaM:'Penal Geral',qua:'Tributário',quiM:'Processo Penal',qui:'Penal Especial',sex:'Legislação penal especial',st:'B',s1:null,s2:'Administrativo',dom:'I'},
+  {seg:'Constitucional',ter:'Consumidor',quaM:'Penal Geral',qua:'Civil - Parte Geral e LINDB',quiM:'Processo Penal',qui:'Empresarial',sex:'Legislação penal especial',st:'A',s1:'ECA',s2:null,dom:'I'},
+  {seg:'Eleitoral',ter:'Processo Civil',quaM:'Processo Penal',qua:'Civil - Famílias e Sucessões',quiM:'Processo Penal',qui:'Penal Especial',sex:'Civil - Contratos e Reais',st:'B',s1:null,s2:'Administrativo',dom:'I'},
+  {seg:'Constitucional',ter:'Civil - Obrigações e Responsabilidade',quaM:'Penal Geral',qua:'Tributário',quiM:'Processo Penal',qui:'Empresarial',sex:'Legislação penal especial',st:'B',s1:null,s2:'Administrativo',dom:'P'},
+  {seg:'Constitucional',ter:'Processo Civil',quaM:'Penal Geral',qua:'Civil - Famílias e Sucessões',quiM:'Processo Penal',qui:'Penal Especial',sex:'Civil - Contratos e Reais',st:'A',s1:'ECA',s2:null,dom:'I'},
+  {seg:'Constitucional',ter:'Consumidor',quaM:'Penal Geral',qua:'Tributário',quiM:'Processo Penal',qui:'Empresarial',sex:'Legislação penal especial',st:'B',s1:null,s2:'Administrativo',dom:'I'},
+  {seg:'Eleitoral',ter:'Processo Civil',quaM:'Penal Geral',qua:'Civil - Parte Geral e LINDB',quiM:'Processo Penal',qui:'Penal Especial',sex:'Civil - Contratos e Reais',st:'B',s1:null,s2:'Ambiental',dom:'I'},
+  {seg:'Constitucional',ter:'Civil - Obrigações e Responsabilidade',quaM:'Penal Geral',qua:'Civil - Famílias e Sucessões',quiM:'Processo Penal',qui:'Empresarial',sex:'Civil - Contratos e Reais',st:'B',s1:null,s2:'Administrativo',dom:'I'},
+  {seg:'Constitucional',ter:'Processo Civil',quaM:'Penal Geral',qua:'Tributário',quiM:'Processo Penal',qui:'Penal Especial',sex:'Legislação penal especial',st:'A',s1:'ECA',s2:null,dom:'I'},
+  {seg:'Constitucional',ter:'Civil - Obrigações e Responsabilidade',quaM:'Penal Geral',qua:'Civil - Parte Geral e LINDB',quiM:'Processo Penal',qui:'Empresarial',sex:'Civil - Contratos e Reais',st:'B',s1:null,s2:'Administrativo',dom:'I'},
+  {seg:'Constitucional',ter:'Consumidor',quaM:'Penal Geral',qua:'Tributário',quiM:'Processo Penal',qui:'Penal Especial',sex:'Legislação penal especial',st:'B',s1:null,s2:'Administrativo',dom:'I'},
+  {seg:'Constitucional',ter:'Processo Civil',quaM:'Penal Geral',qua:'Civil - Famílias e Sucessões',quiM:'Processo Penal',qui:'Empresarial',sex:'Civil - Contratos e Reais',st:'A',s1:'ECA',s2:null,dom:'P'},
+  {seg:'Constitucional',ter:'Civil - Obrigações e Responsabilidade',quaM:'Penal Geral',qua:'Civil - Parte Geral e LINDB',quiM:'Processo Penal',qui:'Empresarial',sex:'Legislação penal especial',st:'B',s1:null,s2:'Ambiental',dom:'I'},
+  {seg:'Eleitoral',ter:'Processo Civil',quaM:'Penal Geral',qua:'Tributário',quiM:'Processo Penal',qui:'Penal Especial',sex:'Civil - Contratos e Reais',st:'B',s1:null,s2:'Administrativo',dom:'I'},
+  {seg:'Constitucional',ter:'Consumidor',quaM:'Penal Geral',qua:'Civil - Famílias e Sucessões',quiM:'Processo Penal',qui:'Empresarial',sex:'Legislação penal especial',st:'A',s1:'ECA',s2:null,dom:'P'},
+  {seg:'Constitucional',ter:'Processo Civil',quaM:'Processo Penal',qua:'Civil - Parte Geral e LINDB',quiM:'Processo Penal',qui:'Penal Especial',sex:'Civil - Contratos e Reais',st:'B',s1:null,s2:'Administrativo',dom:'I'},
+];
+
+function bld(type,c){const p=WP[type];if(!p)return[];return p.map(e=>{let l=e.l;l=l.replace('__M__',({seg:c.seg,ter:c.ter,qua:c.qua,qui:c.qui,sex:c.sex})[type]||'');l=l.replace('__MM__',c[type==='qua'?'quaM':'quiM']||'');l=l.replace('__S1__',c.s1||'Humanística');l=l.replace('__S2__',c.s2||'Administrativo');return{time:e.t,label:l,detail:e.detail||null,isStudy:e.isStudy||false,isEx:e.isEx||false,isReview:e.isReview||false,lsKey:e.ls||null};});}
+
+// ENAM 2026.1 já foi realizado em 07/06/2026 (resultado: 38/80, não habilitado).
+// O edital do ENAM 2026.2 ainda não foi publicado (previsão: edital em jul/2026).
+// Estimativa NÃO OFICIAL de prova, baseada no intervalo entre as edições de 2025 (mai/out): novembro/2026.
+// Assim que o edital sair, troque a linha "const EXAM" abaixo pela data oficial.
+function genDays(){const s=new Date(2026,3,6),e=new Date(2026,10,15),days=[];let wi=0,d=new Date(s);while(d<=e){if(d.getDay()===1){const c=WC[wi%WC.length];for(let i=0;i<7;i++){const cd=new Date(d.getTime()+i*864e5);if(cd>e)break;const dw=cd.getDay();let ev;if(dw===1)ev=bld('seg',c);else if(dw===2)ev=bld('ter',c);else if(dw===3)ev=bld('qua',c);else if(dw===4)ev=bld('qui',c);else if(dw===5)ev=bld('sex',c);else if(dw===6)ev=bld(c.st==='A'?'sA':'sB',c);else ev=bld(c.dom==='P'?'dP':'dI',c);days.push({date:new Date(cd),events:ev});}wi++;d=new Date(d.getTime()+7*864e5);}else d=new Date(d.getTime()+864e5);}return days;}
+
+const allDays=genDays();
+const DN=['dom','seg','ter','qua','qui','sex','sáb'];
+const MN=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov'];
+const EXAM=new Date(2026,10,15); // ESTIMATIVA — ajuste quando o edital do ENAM 2026.2 sair
+
+// ========== STORAGE (Firestore, com cache em memória) ==========
+let DB = {blocks:{}, reviews:{}};
+function udoc(){ return doc(db,'users',currentUser.uid,'data','main'); }
+async function loadUserData(){
+  const snap = await getDoc(udoc());
+  if(snap.exists()){ const d=snap.data(); DB.blocks=d.blocks||{}; DB.reviews=d.reviews||{}; }
+  else { DB.blocks={}; DB.reviews={}; await setDoc(udoc(), {blocks:{},reviews:{}}); }
+}
+function sk(di,ei){return`${di}_${ei}`;}
+function ld(di,ei){return DB.blocks[sk(di,ei)]||{};}
+function sv(di,ei,s){const k=sk(di,ei);DB.blocks[k]=s;syncField('blocks',k,s);}
+function rvk(di,ri){return`${di}_${ri}`;}
+function ldRv(di,ri){return DB.reviews[rvk(di,ri)]||{};}
+function svRv(di,ri,s){const k=rvk(di,ri);DB.reviews[k]=s;syncField('reviews',k,s);}
+async function syncField(field,key,value){
+  syncState='saving';renderSyncBadge();
+  try{ await setDoc(udoc(), {[field]:{[key]:value}}, {merge:true}); syncState='synced'; }
+  catch(e){ syncState='error'; console.error(e); }
+  renderSyncBadge();
+}
+function renderSyncBadge(){
+  const el=document.getElementById('sync-badge');
+  if(!el)return;
+  const map={idle:'',saving:'salvando…',synced:'sincronizado ✓',error:'erro ao salvar ⚠'};
+  el.textContent=map[syncState]||'';
+  el.style.color=syncState==='error'?'#EF4444':syncState==='synced'?'#059669':'#9C9C96';
+}
+
+// ========== SPACED REPETITION ==========
+function getStudySubjects(di){
+  const subs=[];
+  allDays[di].events.forEach((ev,ei)=>{
+    if(ev.isStudy&&!ev.isReview&&!ev.isEx&&ev.label!=='REVISÃO_BLOCK'){
+      const name=ev.label.replace(/ — \d+ pág/,'').replace(/ — .*/,'');
+      if(name!=='Lei seca'&&name!=='Resolver Prova'&&name!=='Informativos STF/STJ'){
+        subs.push({name,dayIdx:di,evIdx:ei});
+      }
+    }
+  });
+  return subs;
+}
+
+function getReviewsForDay(di){
+  const tDate=allDays[di].date;
+  const reviews=[];
+  for(let d=0;d<allDays.length;d++){
+    const sDate=allDays[d].date;
+    const diff=Math.round((tDate-sDate)/864e5);
+    if(diff<=0)continue;
+    const subs=getStudySubjects(d);
+    subs.forEach(sub=>{
+      REVIEW_INTERVALS.forEach(iv=>{
+        if(diff===iv.days){
+          reviews.push({subject:sub.name,tag:iv.tag,cls:iv.cls,tip:iv.tip,originDay:d,originDate:sDate});
+        }
+      });
+    });
+  }
+  return reviews;
+}
+
+// ========== STATS ==========
+function getAllStats(){let done=0,total=0;allDays.forEach((d,di)=>d.events.forEach((ev,ei)=>{if(ev.label!=='REVISÃO_BLOCK'){total++;if(ld(di,ei).done)done++;}}));return{done,total};}
+function getDayDone(di){let c=0;allDays[di].events.forEach((ev,ei)=>{if(ev.label!=='REVISÃO_BLOCK'&&ld(di,ei).done)c++;});return c;}
+function getDayTotal(di){let c=0;allDays[di].events.forEach(ev=>{if(ev.label!=='REVISÃO_BLOCK')c++;});return c;}
+function getStreak(){let s=0;const today=findToday();for(let i=today;i>=0;i--){const t=getDayTotal(i);if(!t)continue;if(getDayDone(i)===t)s++;else break;}return s;}
+function getCompletionBySubject(){const bs={};allDays.forEach((d,di)=>d.events.forEach((ev,ei)=>{if(ev.isStudy&&!ev.isReview&&!ev.isEx&&ev.label!=='REVISÃO_BLOCK'){const n=ev.label.replace(/ — \d+ pág/,'').replace(/ — .*/,'');if(!bs[n])bs[n]={done:0,total:0};bs[n].total++;if(ld(di,ei).done)bs[n].done++;}}));return bs;}
+function getExerciseStats(){const bs={};allDays.forEach((d,di)=>d.events.forEach((ev,ei)=>{if(ev.isEx){const st=ld(di,ei);if(st.acertos!==undefined&&st.total_q){const subs=getStudySubjects(di);subs.forEach(sub=>{if(!bs[sub.name])bs[sub.name]={a:0,t:0};bs[sub.name].a+=parseInt(st.acertos)||0;bs[sub.name].t+=parseInt(st.total_q)||0;});}}}));return bs;}
+
+// ========== TIMER ==========
+let timerInt=null,timerSec=0,timerRun=false,timerMode=25;
+
+// ========== RENDER ==========
+let tab='study';
+function findToday(){const t=new Date();t.setHours(0,0,0,0);for(let i=0;i<allDays.length;i++){const d=allDays[i].date;if(d.getFullYear()===t.getFullYear()&&d.getMonth()===t.getMonth()&&d.getDate()===t.getDate())return i;}return 0;}
+let ci=findToday();
+
+function render(){
+  const stats=getAllStats();
+  const daysToExam=Math.max(0,Math.ceil((EXAM-new Date())/864e5));
+  let h=`<div class="header"><div class="header-title">Magistratura — Plano de Estudos</div>
+    <div class="exam-cd">${daysToExam>0?daysToExam+' dias para ENAM (estimativa)':'Dia da prova!'}</div>
+    <div style="margin-top:6px;font-size:9px;">
+      <span id="sync-badge" style="color:var(--text3);"></span>
+      <button onclick="doLogout()" style="margin-left:8px;border:none;background:none;color:var(--accent);font-size:9px;cursor:pointer;text-decoration:underline;font-family:inherit;">sair</button>
+    </div></div>`;
+  h+=`<div class="tabs">
+    <button class="tab${tab==='study'?' active':''}" onclick="switchTab('study')">Estudo</button>
+    <button class="tab${tab==='method'?' active':''}" onclick="switchTab('method')">Método</button>
+    <button class="tab${tab==='analytics'?' active':''}" onclick="switchTab('analytics')">Analytics</button>
+    <button class="tab${tab==='timer'?' active':''}" onclick="switchTab('timer')">Timer</button>
+  </div>`;
+  if(tab==='study')h+=renderStudy(stats);
+  else if(tab==='method')h+=renderMethod();
+  else if(tab==='analytics')h+=renderAnalytics(stats);
+  else h+=renderTimer();
+  document.getElementById('app').innerHTML=h;
+  renderSyncBadge();
+}
+
+function renderMethod(){
+  const dg=DIAGNOSTICO_2026_1;
+  const pct=Math.round((dg.total_acertos/dg.total_questoes)*100);
+  let h=`<div class="method-box" style="border-color:var(--danger-border);background:linear-gradient(135deg,#FEF2F2,#FFF7ED);">
+    <div class="method-title" style="color:var(--danger-text)">Diagnóstico — ENAM 2026.1 (${dg.data})</div>
+    <div class="method-text"><b>${dg.total_acertos}/${dg.total_questoes} acertos (${pct}%)</b> — abaixo do corte geral (${dg.corte_geral}/80) e do corte de ações afirmativas (${dg.corte_af}/80). 1 mês de estudo. Base: prática profissional já consolidada em Civil, Empresarial e Direitos Humanos; lacuna concentrada em matérias de "edital seco" que exigem tempo de memorização dedicado.</div>
+    <table class="method-table">
+      <tr><th>Matéria</th><th>Acertos</th><th>%</th><th>Status</th></tr>`;
+  dg.materias.slice().sort((a,b)=>(a.acertos/a.questoes)-(b.acertos/b.questoes)).forEach(m=>{
+    const p=Math.round((m.acertos/m.questoes)*100);
+    const cor=m.nivel==='critico'?'#EF4444':m.nivel==='medio'?'#D97706':'#059669';
+    const lbl=m.nivel==='critico'?'crítico':m.nivel==='medio'?'atenção':'forte';
+    h+=`<tr><td>${m.nome}</td><td>${m.acertos}/${m.questoes}</td><td>${p}%</td><td style="color:${cor};font-weight:700">${lbl}</td></tr>`;
+  });
+  h+=`</table>
+    <div class="method-text" style="margin-top:8px;"><b>Por isso o cronograma dá reforço extra a:</b> Direito Administrativo, Direito Processual Civil, Direito Constitucional e Noções Gerais/Formação Humanística — as quatro juntas somam 44 das 80 questões da prova (55% do peso) e foram onde o desempenho ficou mais distante da nota de corte.</div>
+  </div>
+  <div class="method-box">
+    <div class="method-title">Como funciona a revisão espaçada?</div>
+    <div class="method-text">Baseado na curva do esquecimento de Ebbinghaus. Quando você estuda algo, seu cérebro esquece progressivamente. A revisão nos intervalos certos "resgata" o conteúdo e fortalece a memória de longo prazo.</div>
+    <table class="method-table">
+      <tr><th>Intervalo</th><th>O que fazer</th><th>Tempo</th></tr>
+      <tr><td>24h</td><td>Reler grifos e anotações do dia anterior</td><td>10-15 min</td></tr>
+      <tr><td>48h</td><td>Flashcards e pontos-chave, sem olhar o material</td><td>10-15 min</td></tr>
+      <tr><td>30 dias</td><td>Resolver 5-10 questões sobre o tema</td><td>20-30 min</td></tr>
+      <tr><td>60 dias</td><td>Reler artigos-chave + resolver questões</td><td>20-30 min</td></tr>
+      <tr><td>120 dias</td><td>Simulado temático + revisão de artigos críticos</td><td>20-30 min</td></tr>
+    </table>
+  </div>
+  <div class="method-box">
+    <div class="method-title">Como o calendário calcula as revisões?</div>
+    <div class="method-text">Toda vez que você marca um bloco de estudo como "Feito", o sistema agenda automaticamente as revisões nos intervalos 24h, 48h, 30d, 60d e 120d. No bloco de revisão de cada dia, aparece exatamente quais matérias revisar e o motivo (qual intervalo).<br><br>
+    <b>Exemplo prático:</b><br>
+    Segunda 06/04 — você estudou Constitucional e marcou como feito.<br>
+    Terça 07/04 — aparece "Constitucional (24h)" na revisão.<br>
+    Quarta 08/04 — aparece "Constitucional (48h)" na revisão.<br>
+    06/05 — aparece "Constitucional (30d)" na revisão.<br>
+    05/06 — aparece "Constitucional (60d)" na revisão.</div>
+  </div>
+  <div class="method-box">
+    <div class="method-title">Lei seca — o que ler por dia?</div>
+    <div class="method-text">Cada dia da semana tem leis específicas distribuídas. No bloco de lei seca, aparece o detalhamento dos diplomas e artigos prioritários. A distribuição segue o peso de cada matéria no ENAM (58% da prova é lei seca).</div>
+    <table class="method-table">
+      <tr><th>Dia</th><th>Matérias lei seca</th><th>Pág</th></tr>
+      <tr><td>Seg</td><td>Proc. Civil + Tributário</td><td>6</td></tr>
+      <tr><td>Ter</td><td>Civil + Consumidor</td><td>6</td></tr>
+      <tr><td>Qua</td><td>Proc. Penal + Leg. Esp. + Penal G. + Penal E.</td><td>6</td></tr>
+      <tr><td>Qui</td><td>Constitucional + Empresarial + Eleitoral</td><td>6</td></tr>
+      <tr><td>Sex</td><td>Administrativo + Ambiental + ECA + Humanos</td><td>6</td></tr>
+    </table>
+  </div>`;
+  return h;
+}
+
+function renderStudy(stats){
+  const day=allDays[ci],d=day.date;
+  const dn=DN[d.getDay()],ds=`${d.getDate()} de ${MN[d.getMonth()]}`;
+  const wn=Math.floor(ci/7)+1,tw=Math.ceil(allDays.length/7);
+  const prog=stats.total?Math.round((stats.done/stats.total)*100):0;
+  const dayDone=getDayDone(ci),dayTotal=getDayTotal(ci);
+  let h='';
+  h+=`<div class="stats-grid">
+    <div class="stat-card"><div class="stat-val">${stats.done}</div><div class="stat-label">feitos</div></div>
+    <div class="stat-card"><div class="stat-val">${stats.total-stats.done}</div><div class="stat-label">pendentes</div></div>
+    <div class="stat-card"><div class="stat-val">${prog}%</div><div class="stat-label">progresso</div></div>
+    <div class="stat-card"><div class="stat-val">${getStreak()}</div><div class="stat-label">streak</div></div>
+  </div>`;
+  h+=`<div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" style="width:${prog}%"></div></div>
+    <div class="progress-info"><span>Sem. ${wn}/${tw}</span><span>${stats.done}/${stats.total}</span></div></div>`;
+  const months=[{l:'abr',m:3},{l:'mai',m:4},{l:'jun',m:5},{l:'jul',m:6},{l:'ago',m:7},{l:'set',m:8},{l:'out',m:9},{l:'nov',m:10}];
+  h+=`<div class="mo-strip">`;months.forEach(mo=>{h+=`<button class="mo-btn${d.getMonth()===mo.m?' active':''}" onclick="jumpMo(${mo.m})">${mo.l}</button>`;});h+=`</div>`;
+  h+=`<div class="day-nav">
+    <button class="nav-btn" onclick="nav(-1)" ${ci===0?'disabled':''}>&larr;</button>
+    <div class="nav-center"><div class="nav-dow">${dn}</div><div class="nav-date">${ds}</div><div class="nav-week">semana ${wn}</div></div>
+    <button class="nav-btn" onclick="nav(1)" ${ci===allDays.length-1?'disabled':''}>&rarr;</button>
+  </div>`;
+  h+=`<div class="week-dots">`;const ws=Math.floor(ci/7)*7;
+  for(let i=0;i<7;i++){const idx=ws+i;if(idx<allDays.length){const dd=allDays[idx].date;const act=idx===ci;const td=(()=>{const t=new Date();t.setHours(0,0,0,0);return dd.getFullYear()===t.getFullYear()&&dd.getMonth()===t.getMonth()&&dd.getDate()===t.getDate();})();const ad=getDayDone(idx)===getDayTotal(idx)&&getDayTotal(idx)>0;h+=`<button class="wd${act?' active':''}${td?' today':''}${ad?' all-done':''}" onclick="goTo(${idx})">${dd.getDate()}</button>`;}}
+  h+=`</div>`;
+
+  // REVIEW SECTION
+  const reviews=getReviewsForDay(ci);
+  if(reviews.length>0){
+    h+=`<div class="rv-section" style="background:linear-gradient(135deg,#FFF7ED,#FFFBEB);border-color:var(--warn-border);">
+      <div class="rv-header" style="color:var(--warn-text)"><div class="rv-icon" style="background:var(--warn-border)">R</div>Revisão espaçada — ${reviews.length} matéria${reviews.length>1?'s':''}</div>`;
+    reviews.forEach((rv,ri)=>{
+      const rvSt=ldRv(ci,ri);
+      const oDate=`${rv.originDate.getDate()}/${rv.originDate.getMonth()+1}`;
+      h+=`<div class="rv-item">
+        <span class="rv-tag ${rv.cls}">${rv.tag}</span>
+        <div style="flex:1"><div class="rv-mat" style="color:var(--warn-text)">${rv.subject}</div>
+        <div class="rv-tip">${rv.tip}</div>
+        <div class="rv-origin">Estudado em ${oDate}</div></div>
+        <button class="rv-check${rvSt.done?' done':''}" onclick="toggleRv(${ci},${ri})">${rvSt.done?'&#10003;':''}</button>
+      </div>`;
+    });
+    h+=`</div>`;
+  }
+
+  // Events
+  if(!day.events.length){h+=`<div class="empty-day">Sem atividades programadas.</div>`;}
+  else{
+    if(dayTotal>0)h+=`<div style="font-size:11px;color:var(--text3);margin-bottom:8px;">${dayTotal} blocos${dayDone?` &middot; <span style="color:var(--done-border);font-weight:600">${dayDone}/${dayTotal} feitos</span>`:''}</div>`;
+    day.events.forEach((ev,ei)=>{
+      if(ev.isReview) return; // handled above
+      const c=gc(ev.label);const link=gl(ev.label);const st=ld(ci,ei);const done=st.done||false;
+      h+=`<div class="ev-card${done?' completed':''}"><div style="display:flex;"><div class="ev-left" style="background:${done?'var(--done-border)':c.br}"></div>
+        <div class="ev-body" style="flex:1;">
+          <div class="ev-top"><span class="ev-time" style="color:${done?'var(--done-text)':c.tx}">${ev.time}</span>
+          ${link?`<a href="${link}" target="_blank" class="ev-link" style="background:${c.br}">PDF &nearr;</a>`:''}</div>
+          <div class="ev-title" style="color:${done?'var(--done-text)':c.tx}">${ev.label}</div>`;
+
+      // Lei seca detail
+      if(ev.lsKey && LEI_SECA_DETAIL[ev.lsKey]){
+        const ls=LEI_SECA_DETAIL[ev.lsKey];
+        h+=`<div class="ev-leis"><b>Leis do dia:</b><br>`;
+        ls.leis.forEach(l=>{h+=`&bull; <b>${l.materia}</b> (${l.pags}p): ${l.leis}<br>`;});
+        h+=`</div>`;
+      }
+
+      h+=`<div class="ev-ctrls">
+            <button class="btn-done${done?' is-done':''}" onclick="toggleDone(${ci},${ei})">${done?'&#10003; Feito':'Marcar feito'}</button>
+            <input class="pg-input" type="text" placeholder="pág." value="${st.page||''}" onchange="savePg(${ci},${ei},this.value)">
+          </div>`;
+      if(ev.isEx){
+        const pct=st.total_q?(Math.round((parseInt(st.acertos||0)/parseInt(st.total_q))*100)):null;
+        const pctCls=pct===null?'':pct>=70?'good':pct>=50?'mid':'bad';
+        h+=`<div class="ex-row"><span class="ex-label">Acertos:</span><input class="ex-input" type="number" value="${st.acertos||''}" onchange="saveEx(${ci},${ei},'acertos',this.value)">
+          <span class="ex-label">de</span><input class="ex-input" type="number" placeholder="24" value="${st.total_q||''}" onchange="saveEx(${ci},${ei},'total_q',this.value)">
+          ${pct!==null?`<span class="ex-pct ${pctCls}">${pct}%</span>`:''}</div>`;
+      }
+      h+=`<div class="ev-notes"><button class="notes-tog" onclick="toggleNotes(${ei})">${st.notes?'editar obs':'+ obs'}</button>
+        <div id="nt-${ei}" style="display:${st.notes?'block':'none'}"><textarea class="notes-area" onchange="saveNt(${ci},${ei},this.value)">${st.notes||''}</textarea></div></div>
+      </div></div></div>`;
+    });
+  }
+  h+=`<div class="jump-row">
+    <button class="jump-btn" onclick="nav(-7)">&larr; sem</button>
+    <button class="jump-btn today-btn" onclick="goTo(${findToday()})">hoje</button>
+    <button class="jump-btn" onclick="nav(7)">sem &rarr;</button>
+  </div>`;
+  h+=`<div class="export-row">
+    <button class="export-btn" onclick="exportData()">Exportar</button>
+    <label class="export-btn" style="cursor:pointer">Importar<input type="file" accept=".json" style="display:none" onchange="importData(event)"></label>
+  </div>`;
+  return h;
+}
+
+function renderAnalytics(stats){
+  let h='';
+  h+=`<div class="chart-card streak-card"><div class="streak-num">${getStreak()}</div><div class="streak-label">dias consecutivos completos</div></div>`;
+  const bs=getCompletionBySubject();const sa=Object.entries(bs).sort((a,b)=>(a[1].done/a[1].total)-(b[1].done/b[1].total));
+  h+=`<div class="chart-card"><div class="chart-title">Progresso por matéria</div>`;
+  sa.forEach(([n,d])=>{const p=d.total?Math.round((d.done/d.total)*100):0;const c=p>=70?'#059669':p>=40?'#D97706':'#EF4444';
+    h+=`<div class="bar-row"><div class="bar-label">${n.replace('Civil - ','C.')}</div><div class="bar-track"><div class="bar-fill" style="width:${p}%;background:${c}"></div></div><div class="bar-val">${p}%</div></div>`;});
+  h+=`</div>`;
+  const es=getExerciseStats();const ea=Object.entries(es).filter(([_,d])=>d.t>0).sort((a,b)=>(a[1].a/a[1].t)-(b[1].a/b[1].t));
+  if(ea.length){h+=`<div class="chart-card"><div class="chart-title">Desempenho exercícios</div>`;
+    ea.forEach(([n,d])=>{const p=Math.round((d.a/d.t)*100);const c=p>=70?'#059669':p>=50?'#D97706':'#EF4444';
+      h+=`<div class="bar-row"><div class="bar-label">${n.replace('Civil - ','C.')}</div><div class="bar-track"><div class="bar-fill" style="width:${p}%;background:${c}"></div></div><div class="bar-val">${p}%</div></div>`;});
+    h+=`</div>`;}
+  h+=`<div class="chart-card"><div class="chart-title">Conclusão por semana</div>`;
+  const tw2=Math.ceil(allDays.length/7);
+  for(let w=0;w<tw2;w++){let wd=0,wt=0;for(let i=w*7;i<Math.min((w+1)*7,allDays.length);i++){allDays[i].events.forEach((ev,ei)=>{if(ev.label!=='REVISÃO_BLOCK'){wt++;if(ld(i,ei).done)wd++;}});}
+    const p=wt?Math.round((wd/wt)*100):0;const sd=allDays[w*7].date;
+    h+=`<div class="bar-row"><div class="bar-label">S${w+1} (${sd.getDate()}/${sd.getMonth()+1})</div><div class="bar-track"><div class="bar-fill" style="width:${p}%;background:${p>=70?'#059669':p>=40?'#D97706':'#EF4444'}"></div></div><div class="bar-val">${p}%</div></div>`;}
+  h+=`</div>`;
+  return h;
+}
+
+function renderTimer(){
+  const m=Math.floor(timerSec/60),s=timerSec%60;
+  return`<div class="timer-section"><div class="timer-label">Pomodoro</div>
+    <div class="timer-modes">
+      <button class="timer-mode${timerMode===25?' active':''}" onclick="setTM(25)">25m</button>
+      <button class="timer-mode${timerMode===45?' active':''}" onclick="setTM(45)">45m</button>
+      <button class="timer-mode${timerMode===60?' active':''}" onclick="setTM(60)">60m</button>
+      <button class="timer-mode${timerMode===5?' active':''}" onclick="setTM(5)">Pausa</button>
+    </div>
+    <div class="timer-display">${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}</div>
+    <div class="timer-btns">
+      ${timerRun?`<button class="timer-btn" onclick="pauseT()">Pausar</button>`:`<button class="timer-btn primary" onclick="startT()">Iniciar</button>`}
+      <button class="timer-btn" onclick="resetT()">Resetar</button>
+    </div></div>`;
+}
+
+// ========== ACTIONS ==========
+window.switchTab=function(t){tab=t;render();};
+window.nav=function(dir){ci=Math.max(0,Math.min(allDays.length-1,ci+dir));render();};
+window.goTo=function(i){ci=i;render();};
+window.jumpMo=function(m){for(let i=0;i<allDays.length;i++){if(allDays[i].date.getMonth()===m){ci=i;render();return;}}};
+window.toggleDone=function(di,ei){const s=ld(di,ei);s.done=!s.done;if(s.done)s.doneAt=new Date().toISOString();sv(di,ei,s);render();};
+window.savePg=function(di,ei,v){const s=ld(di,ei);s.page=v;sv(di,ei,s);};
+window.saveNt=function(di,ei,v){const s=ld(di,ei);s.notes=v;sv(di,ei,s);};
+window.saveEx=function(di,ei,f,v){const s=ld(di,ei);s[f]=v;sv(di,ei,s);render();};
+window.toggleNotes=function(ei){const el=document.getElementById('nt-'+ei);if(el)el.style.display=el.style.display==='none'?'block':'none';};
+window.toggleRv=function(di,ri){const s=ldRv(di,ri);s.done=!s.done;svRv(di,ri,s);render();};
+window.setTM=function(m){timerMode=m;timerSec=m*60;timerRun=false;if(timerInt)clearInterval(timerInt);render();};
+window.startT=function(){if(!timerSec)timerSec=timerMode*60;timerRun=true;timerInt=setInterval(()=>{if(timerSec>0){timerSec--;render();}else{clearInterval(timerInt);timerRun=false;render();alert('Tempo esgotado!');}},1000);render();};
+window.pauseT=function(){clearInterval(timerInt);timerRun=false;render();};
+window.resetT=function(){clearInterval(timerInt);timerRun=false;timerSec=timerMode*60;render();};
+window.exportData=function(){const b=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`magistratura_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();};
+window.importData=function(evt){const f=evt.target.files[0];if(!f)return;const r=new FileReader();r.onload=async function(e){try{const d=JSON.parse(e.target.result);DB.blocks=d.blocks||{};DB.reviews=d.reviews||{};await setDoc(udoc(),DB);render();alert('Importado e sincronizado!');}catch(err){alert('Arquivo inválido.');}};r.readAsText(f);};
+
+// ========== AUTH / BOOTSTRAP ==========
+function renderLogin(mode, err){
+  mode = mode || 'login';
+  document.getElementById('app').innerHTML = `
+    <div class="header"><div class="header-title">Magistratura — Plano de Estudos</div></div>
+    <div class="method-box" style="max-width:340px;margin:40px auto 0;">
+      <div class="method-title">${mode==='login'?'Entrar':'Criar conta'}</div>
+      ${err?`<div style="font-size:11px;color:#EF4444;margin-bottom:8px;">${err}</div>`:''}
+      <input id="li-email" type="email" placeholder="e-mail" class="pg-input" style="width:100%;border-radius:8px;margin-bottom:8px;box-sizing:border-box;padding:8px 10px;">
+      <input id="li-pass" type="password" placeholder="senha" class="pg-input" style="width:100%;border-radius:8px;margin-bottom:12px;box-sizing:border-box;padding:8px 10px;">
+      <button class="export-btn" style="width:100%;background:var(--accent);color:#fff;border-color:var(--accent);margin-bottom:8px;" onclick="${mode==='login'?'doLogin()':'doSignup()'}">${mode==='login'?'Entrar':'Criar conta'}</button>
+      <button class="notes-tog" style="display:block;margin:0 auto;" onclick="${mode==='login'?"switchAuthMode('signup')":"switchAuthMode('login')"}">${mode==='login'?'Ainda não tenho conta':'Já tenho conta'}</button>
+    </div>`;
+}
+window.switchAuthMode=function(m){renderLogin(m);};
+window.doLogin=async function(){
+  const email=document.getElementById('li-email').value.trim();
+  const pass=document.getElementById('li-pass').value;
+  try{ await signInWithEmailAndPassword(auth,email,pass); }
+  catch(e){ renderLogin('login', 'Não foi possível entrar: verifique e-mail e senha.'); }
+};
+window.doSignup=async function(){
+  const email=document.getElementById('li-email').value.trim();
+  const pass=document.getElementById('li-pass').value;
+  try{ await createUserWithEmailAndPassword(auth,email,pass); }
+  catch(e){ renderLogin('signup', 'Não foi possível criar a conta: '+(e.code||'')+'.'); }
+};
+window.doLogout=async function(){ await signOut(auth); };
+
+onAuthStateChanged(auth, async (user)=>{
+  currentUser=user;
+  if(user){
+    document.getElementById('app').innerHTML='<div class="empty-day">Carregando seus dados…</div>';
+    await loadUserData();
+    timerSec=timerMode*60;
+    render();
+  } else {
+    renderLogin('login');
+  }
+});
+</script>
+</body>
+</html>
