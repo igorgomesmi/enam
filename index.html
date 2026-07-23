@@ -139,14 +139,51 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .method-table td:first-child{font-weight:600;color:var(--accent);}
 
 .empty-day{text-align:center;padding:24px;color:var(--text3);font-size:13px;}
+
+/* Docs tab */
+.doc-row{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:10px;margin-bottom:8px;box-shadow:var(--shadow);}
+.doc-row-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.doc-name{font-size:11px;font-weight:700;}
+.doc-status{font-size:9px;padding:2px 8px;border-radius:10px;font-weight:600;}
+.doc-status.empty{background:#F5F5F4;color:#9C9C96;}
+.doc-status.up{background:#ECFDF5;color:#065F46;}
+.doc-status.lk{background:#EFF6FF;color:#1E40AF;}
+.doc-row-ctrls{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+.doc-btn{font-size:9px;padding:4px 10px;border-radius:16px;border:1px solid var(--border);background:var(--card);cursor:pointer;font-family:inherit;color:var(--text2);}
+.doc-btn.danger{color:#EF4444;border-color:#FCA5A5;}
+.doc-link-input{flex:1;min-width:100px;font-size:10px;padding:4px 8px;border-radius:16px;border:1px solid var(--border);font-family:inherit;background:transparent;color:var(--text);}
+.doc-upload-status{font-size:9px;color:var(--text3);margin-top:4px;}
+
+/* PDF viewer */
+.viewer-bar{display:flex;align-items:center;gap:8px;padding:8px 4px;position:sticky;top:0;background:var(--bg);z-index:20;}
+.viewer-x{font-size:20px;line-height:1;border:none;background:none;cursor:pointer;color:var(--text2);padding:2px 8px;}
+.viewer-title{flex:1;font-size:11px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.viewer-nav{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--text2);}
+.viewer-nav button{border:1px solid var(--border);background:var(--card);border-radius:10px;padding:3px 9px;cursor:pointer;font-family:inherit;}
+.viewer-nav button:disabled{opacity:.35;cursor:default;}
+.viewer-canvas-wrap{position:relative;width:100%;margin:0 auto;background:#57534E;border-radius:8px;overflow:hidden;display:flex;justify-content:center;}
+#viewer-canvas{display:block;}
+.textLayer{position:absolute;top:0;left:0;overflow:hidden;line-height:1;opacity:1;}
+.textLayer span,.textLayer br{color:transparent;position:absolute;white-space:pre;cursor:text;transform-origin:0% 0%;}
+.textLayer ::selection{background:rgba(99,102,241,.35);}
+.textLayer mark.hl{background:rgba(250,204,21,.55);}
+.textLayer span.hl-span{background:rgba(250,204,21,.45);}
+.hl-btn{position:absolute;background:#292524;color:#fff;font-size:10px;padding:5px 10px;border-radius:8px;cursor:pointer;z-index:50;}
+.viewer-notes{margin-top:10px;}
+.viewer-notes-label{font-size:10px;color:var(--text3);margin-bottom:4px;}
 </style>
 </head>
 <body>
 <div class="container" id="app"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  if(window.pdfjsLib){ window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; }
+</script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCflA4j7_CInzOWELcnI0p0fQHhCeo1_YY",
@@ -159,30 +196,19 @@ const firebaseConfig = {
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
 const db = getFirestore(fbApp);
+const storage = getStorage(fbApp);
 let currentUser = null;
 let syncState = 'idle'; // idle | saving | synced | error
-// ========== LINKS ==========
-const LINKS={
-'Administrativo':'https://drive.google.com/file/d/1LYbS-C1VppGyLf09R6kJsypkTkvtWXQo/view',
-'Ambiental':'https://drive.google.com/file/d/1asAnV4bc5df4WNaj_N_4XwseG5c922Zp/view',
-'Civil - Contratos e Reais':'https://drive.google.com/file/d/17M6oFAp5Oe5KPJ9ZD8uuDa1UWlICmql5/view',
-'Civil - Famílias e Sucessões':'https://drive.google.com/file/d/1ZXclEamngBaGY-v3XOlkrI_iolpjWJC2/view',
-'Civil - Obrigações e Responsabilidade':'https://drive.google.com/file/d/1LU3REYvoR-sa50Guu2vbj2bizUzg0uzv/view',
-'Civil - Parte Geral e LINDB':'https://drive.google.com/file/d/15B1lQD9RaR_Qp8KASyr-vKvf-8cghP7A/view',
-'Constitucional':'https://drive.google.com/file/d/1GTlwwm8LK7VeVPTSlimm8jzsAxfOJv1E/view',
-'Consumidor':'https://drive.google.com/file/d/1zmxf1YisnAUhp6PZSqp0CR91eiGxx_0C/view',
-'ECA':'https://drive.google.com/file/d/1dNapTHjwoaLFZdgugZ4Ia7cGzt_Lsds5/view',
-'Eleitoral':'https://drive.google.com/file/d/1gEH2_CTZdzElkjSO_OZMT9zXlcP3WZn4/view',
-'Empresarial':'https://drive.google.com/file/d/1_MTCYoqksc43l2HBGvkvpeL4--XPawoo/view',
-'Legislação penal especial':'https://drive.google.com/file/d/1bqTzClxNaVQ08EfAZnbpShW6C4gmlBce/view',
-'Penal Especial':'https://drive.google.com/file/d/1bbpmLqB8Bo9hPGAby8JTfEEsHEiA40Ci/view',
-'Penal Geral':'https://drive.google.com/file/d/17PH3A1-sIhBd7xGQl7qbu8K_APGwEUa4/view',
-'Processo Civil':'https://drive.google.com/file/d/1IoNqZquukBD9_rYd7e5y3MMZuW237wMi/view',
-'Processo Penal':'https://drive.google.com/file/d/1Sjh89FLhC2FZj-d_Pl_rrFULmPNNvi3J/view',
-'Tributário':'https://drive.google.com/file/d/1WziCyT32mrWzx5QZq1fRaA9JYoYbdtDd/view',
-'Humanos':'https://drive.google.com/drive/folders/15K1O0mpFhdex8Ldq18U1xsWjHVuJNrMK',
-'Humanística':'https://drive.google.com/drive/folders/15K1O0mpFhdex8Ldq18U1xsWjHVuJNrMK',
-};
+
+// ========== MATÉRIAS (slots de documento — cada usuário sobe o próprio material) ==========
+// Nenhum link de material de terceiros fica pré-carregado aqui. Cada slot começa vazio;
+// o próprio usuário faz upload do PDF ou cola o link do que já possui.
+const DOC_SUBJECTS=['Administrativo','Ambiental','Civil - Contratos e Reais','Civil - Famílias e Sucessões',
+'Civil - Obrigações e Responsabilidade','Civil - Parte Geral e LINDB','Constitucional','Consumidor','ECA',
+'Eleitoral','Empresarial','Legislação penal especial','Penal Especial','Penal Geral','Processo Civil',
+'Processo Penal','Tributário','Humanos','Humanística'];
+function docKeyFor(label){for(const k of DOC_SUBJECTS)if(label.includes(k))return k;return null;}
+function slug(s){return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9]+/g,'_');}
 const CLRS={
 'Constitucional':{bg:'#EEEDFE',br:'#6366F1',tx:'#3730A3'},'Civil':{bg:'#ECFDF5',br:'#10B981',tx:'#065F46'},
 'Processo Civil':{bg:'#EFF6FF',br:'#3B82F6',tx:'#1E40AF'},'Penal Geral':{bg:'#FFF7ED',br:'#F97316',tx:'#9A3412'},
@@ -197,7 +223,6 @@ const CLRS={
 'Reforço crítico':{bg:'#FEF2F2',br:'#EF4444',tx:'#991B1B'},
 };
 function gc(l){for(const k in CLRS)if(l.includes(k))return CLRS[k];return{bg:'#F5F5F4',br:'#78716C',tx:'#44403C'};}
-function gl(l){for(const k in LINKS)if(l.includes(k))return LINKS[k];return null;}
 
 // ========== LEI SECA DETAIL ==========
 const LEI_SECA_DETAIL = {
@@ -323,12 +348,12 @@ const MN=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov'];
 const EXAM=new Date(2026,10,15); // ESTIMATIVA — ajuste quando o edital do ENAM 2026.2 sair
 
 // ========== STORAGE (Firestore, com cache em memória) ==========
-let DB = {blocks:{}, reviews:{}};
+let DB = {blocks:{}, reviews:{}, docs:{}};
 function udoc(){ return doc(db,'users',currentUser.uid,'data','main'); }
 async function loadUserData(){
   const snap = await getDoc(udoc());
-  if(snap.exists()){ const d=snap.data(); DB.blocks=d.blocks||{}; DB.reviews=d.reviews||{}; }
-  else { DB.blocks={}; DB.reviews={}; await setDoc(udoc(), {blocks:{},reviews:{}}); }
+  if(snap.exists()){ const d=snap.data(); DB.blocks=d.blocks||{}; DB.reviews=d.reviews||{}; DB.docs=d.docs||{}; }
+  else { DB.blocks={}; DB.reviews={}; DB.docs={}; await setDoc(udoc(), {blocks:{},reviews:{},docs:{}}); }
 }
 function sk(di,ei){return`${di}_${ei}`;}
 function ld(di,ei){return DB.blocks[sk(di,ei)]||{};}
@@ -342,6 +367,10 @@ async function syncField(field,key,value){
   catch(e){ syncState='error'; console.error(e); }
   renderSyncBadge();
 }
+// ---- docs helpers ----
+function ldDoc(key){return DB.docs[key]||null;}
+function svDoc(key,d){DB.docs[key]=d;syncField('docs',key,d);}
+function updDoc(key,patch){const cur=DB.docs[key]||{};const nd={...cur,...patch};svDoc(key,nd);return nd;}
 function renderSyncBadge(){
   const el=document.getElementById('sync-badge');
   if(!el)return;
@@ -375,7 +404,7 @@ function getReviewsForDay(di){
     subs.forEach(sub=>{
       REVIEW_INTERVALS.forEach(iv=>{
         if(diff===iv.days){
-          reviews.push({subject:sub.name,tag:iv.tag,cls:iv.cls,tip:iv.tip,originDay:d,originDate:sDate});
+          reviews.push({subject:sub.name,tag:iv.tag,cls:iv.cls,tip:iv.tip,originDay:d,originEvIdx:sub.evIdx,originDate:sDate});
         }
       });
     });
@@ -394,6 +423,201 @@ function getExerciseStats(){const bs={};allDays.forEach((d,di)=>d.events.forEach
 // ========== TIMER ==========
 let timerInt=null,timerSec=0,timerRun=false,timerMode=25;
 
+// ========== DOCUMENT VIEWER ==========
+let viewer={open:false,key:null,page:1,numPages:0,pdf:null,di:null,ei:null,mode:'study',rendering:false};
+
+window.uploadDocFile=async function(key,evt){
+  const f=evt.target.files[0];if(!f)return;
+  const statusEl=document.getElementById('doc-upload-status-'+slug(key));
+  if(statusEl)statusEl.textContent='enviando…';
+  try{
+    const path=`users/${currentUser.uid}/docs/${slug(key)}.pdf`;
+    await uploadBytes(ref(storage,path),f,{contentType:'application/pdf'});
+    updDoc(key,{type:'upload',storagePath:path,fileName:f.name,lastPage:1,numPages:null,highlights:{},notes:{},uploadedAt:new Date().toISOString()});
+    if(statusEl)statusEl.textContent='enviado ✓';
+    render();
+  }catch(e){console.error(e);if(statusEl)statusEl.textContent='erro ao enviar — tente de novo';}
+};
+window.saveDocLink=function(key,val){
+  if(!val)return;
+  updDoc(key,{type:'link',link:val});
+  render();
+};
+window.removeDoc=async function(key){
+  const d=ldDoc(key);if(!d)return;
+  if(!confirm('Remover material de '+key+'? Grifos e notas dessa matéria serão perdidos.'))return;
+  if(d.type==='upload'&&d.storagePath){try{await deleteObject(ref(storage,d.storagePath));}catch(e){console.error(e);}}
+  DB.docs[key]=null;
+  syncField('docs',key,null);
+  render();
+};
+
+window.openDocSubject=async function(key,opts={}){
+  const d=ldDoc(key);
+  if(!d||d.type!=='upload')return;
+  viewer.open=true;viewer.key=key;viewer.di=(opts.di!=null?opts.di:null);viewer.ei=(opts.ei!=null?opts.ei:null);
+  viewer.mode=opts.mode||'study';viewer.pdf=null;viewer.numPages=d.numPages||0;
+  const startPage=opts.forcePage||d.lastPage||1;
+  viewer.page=startPage;
+  if(viewer.mode==='study'&&viewer.di!=null&&viewer.ei!=null){
+    const bs=ld(viewer.di,viewer.ei);
+    if(bs.docStartPage==null){bs.docStartPage=startPage;sv(viewer.di,viewer.ei,bs);}
+  }
+  render();
+  try{
+    const url=await getDownloadURL(ref(storage,d.storagePath));
+    const task=window.pdfjsLib.getDocument(url);
+    viewer.pdf=await task.promise;
+    viewer.numPages=viewer.pdf.numPages;
+    if(!d.numPages)updDoc(key,{numPages:viewer.numPages});
+    await drawCurrentPage();
+  }catch(e){console.error(e);alert('Não consegui carregar o PDF. Tente reenviar o arquivo em Documentos.');}
+};
+
+window.closeViewer=function(){
+  if(viewer.key){
+    if(viewer.mode==='study'&&viewer.di!=null&&viewer.ei!=null){
+      const bs=ld(viewer.di,viewer.ei);bs.docEndPage=viewer.page;sv(viewer.di,viewer.ei,bs);
+    }
+    updDoc(viewer.key,{lastPage:viewer.page});
+  }
+  viewer={open:false,key:null,page:1,numPages:0,pdf:null,di:null,ei:null,mode:'study',rendering:false};
+  render();
+};
+
+window.viewerPage=function(delta){
+  if(viewer.rendering||!viewer.pdf)return;
+  const np=viewer.page+delta;
+  if(np<1||(viewer.numPages&&np>viewer.numPages))return;
+  if(viewer.mode==='study'&&viewer.di!=null&&viewer.ei!=null){
+    const bs=ld(viewer.di,viewer.ei);bs.docEndPage=np;sv(viewer.di,viewer.ei,bs);
+  }
+  updDoc(viewer.key,{lastPage:np});
+  viewer.page=np;
+  render();
+};
+
+window.saveDocNote=function(val){
+  const d=ldDoc(viewer.key)||{};const notes={...(d.notes||{})};notes[viewer.page]=val;
+  updDoc(viewer.key,{notes});
+};
+
+function renderViewer(){
+  const d=ldDoc(viewer.key)||{};
+  const note=(d.notes&&d.notes[viewer.page])||'';
+  let h=`<div class="viewer-bar">
+    <button class="viewer-x" onclick="closeViewer()">&times;</button>
+    <div class="viewer-title">${viewer.key}</div>
+    <div class="viewer-nav">
+      <button onclick="viewerPage(-1)" ${viewer.page<=1?'disabled':''}>&larr;</button>
+      <span>${viewer.page} / ${viewer.numPages||'…'}</span>
+      <button onclick="viewerPage(1)" ${viewer.numPages&&viewer.page>=viewer.numPages?'disabled':''}>&rarr;</button>
+    </div>
+  </div>
+  <div class="viewer-canvas-wrap" id="viewer-canvas-wrap">
+    <canvas id="viewer-canvas"></canvas>
+    <div class="textLayer" id="viewer-textlayer"></div>
+    <div id="viewer-hl-btn" class="hl-btn" style="display:none;">Grifar</div>
+  </div>
+  <div class="viewer-notes">
+    <div class="viewer-notes-label">Nota — página ${viewer.page}</div>
+    <textarea id="viewer-note-area" class="notes-area" onchange="saveDocNote(this.value)" placeholder="Escreva aqui uma nota sobre esta página...">${note}</textarea>
+  </div>`;
+  document.getElementById('app').innerHTML=h;
+  if(viewer.pdf&&!viewer.rendering)drawCurrentPage();
+  const tl=document.getElementById('viewer-textlayer');
+  if(tl)tl.addEventListener('mouseup',onViewerSelection);
+}
+
+async function drawCurrentPage(){
+  if(!viewer.pdf)return;
+  viewer.rendering=true;
+  try{
+    const page=await viewer.pdf.getPage(viewer.page);
+    const wrap=document.getElementById('viewer-canvas-wrap');
+    if(!wrap){viewer.rendering=false;return;}
+    const targetWidth=Math.min(wrap.clientWidth||360,720);
+    const baseVp=page.getViewport({scale:1});
+    const scale=targetWidth/baseVp.width;
+    const viewport=page.getViewport({scale});
+    const canvas=document.getElementById('viewer-canvas');
+    canvas.width=viewport.width;canvas.height=viewport.height;
+    canvas.style.width=viewport.width+'px';canvas.style.height=viewport.height+'px';
+    const ctx=canvas.getContext('2d');
+    await page.render({canvasContext:ctx,viewport}).promise;
+    const textContent=await page.getTextContent();
+    const tlDiv=document.getElementById('viewer-textlayer');
+    tlDiv.innerHTML='';tlDiv.style.width=viewport.width+'px';tlDiv.style.height=viewport.height+'px';
+    const task=window.pdfjsLib.renderTextLayer({textContentSource:textContent,container:tlDiv,viewport,textDivs:[]});
+    await task.promise;
+    applyStoredHighlights();
+  }catch(e){console.error(e);}
+  viewer.rendering=false;
+}
+
+function onViewerSelection(){
+  const sel=window.getSelection();
+  const btn=document.getElementById('viewer-hl-btn');
+  if(!btn)return;
+  if(!sel||sel.isCollapsed||sel.toString().trim().length===0){btn.style.display='none';return;}
+  const range=sel.getRangeAt(0);
+  const tlDiv=document.getElementById('viewer-textlayer');
+  if(!tlDiv||!tlDiv.contains(range.commonAncestorContainer)){btn.style.display='none';return;}
+  const rect=range.getBoundingClientRect();
+  const wrapRect=document.getElementById('viewer-canvas-wrap').getBoundingClientRect();
+  btn.style.left=Math.max(0,rect.left-wrapRect.left)+'px';
+  btn.style.top=Math.max(0,rect.top-wrapRect.top-30)+'px';
+  btn.style.display='block';
+  const text=sel.toString();
+  btn.onclick=function(){createHighlightFromSelection(range,text);btn.style.display='none';sel.removeAllRanges();};
+}
+
+function spanIndexOf(container,node){
+  const el=node.nodeType===3?node.parentElement:node;
+  return Array.from(container.children).indexOf(el);
+}
+
+function createHighlightFromSelection(range,text){
+  const tlDiv=document.getElementById('viewer-textlayer');
+  const startIdx=spanIndexOf(tlDiv,range.startContainer);
+  const endIdx=spanIndexOf(tlDiv,range.endContainer);
+  try{
+    const mark=document.createElement('mark');mark.className='hl';
+    range.surroundContents(mark);
+  }catch(e){
+    for(let i=Math.max(0,startIdx);i<=Math.max(0,endIdx);i++){
+      const el=tlDiv.children[i];if(el)el.classList.add('hl-span');
+    }
+  }
+  const d=ldDoc(viewer.key)||{};const hls={...(d.highlights||{})};
+  const pageHls=(hls[viewer.page]||[]).slice();
+  pageHls.push({startIdx:Math.max(0,startIdx),startOff:range.startOffset,endIdx:Math.max(0,endIdx),endOff:range.endOffset,text,ts:Date.now()});
+  hls[viewer.page]=pageHls;
+  updDoc(viewer.key,{highlights:hls});
+}
+
+function applyStoredHighlights(){
+  const d=ldDoc(viewer.key);if(!d||!d.highlights)return;
+  const list=d.highlights[viewer.page];if(!list||!list.length)return;
+  const tlDiv=document.getElementById('viewer-textlayer');
+  list.forEach(hl=>{
+    try{
+      if(hl.startIdx===hl.endIdx){
+        const el=tlDiv.children[hl.startIdx];const tn=el&&el.firstChild;
+        if(!tn)return;
+        const len=tn.length||0;
+        const r=document.createRange();
+        r.setStart(tn,Math.min(hl.startOff,len));
+        r.setEnd(tn,Math.min(hl.endOff,len));
+        const mark=document.createElement('mark');mark.className='hl';
+        r.surroundContents(mark);
+      }else{
+        for(let i=hl.startIdx;i<=hl.endIdx;i++){const el=tlDiv.children[i];if(el)el.classList.add('hl-span');}
+      }
+    }catch(e){/* posição pode não coincidir se a página renderizar diferente; ignora este grifo */}
+  });
+}
+
 // ========== RENDER ==========
 let tab='study';
 function findToday(){const t=new Date();t.setHours(0,0,0,0);for(let i=0;i<allDays.length;i++){const d=allDays[i].date;if(d.getFullYear()===t.getFullYear()&&d.getMonth()===t.getMonth()&&d.getDate()===t.getDate())return i;}return 0;}
@@ -410,16 +634,41 @@ function render(){
     </div></div>`;
   h+=`<div class="tabs">
     <button class="tab${tab==='study'?' active':''}" onclick="switchTab('study')">Estudo</button>
+    <button class="tab${tab==='docs'?' active':''}" onclick="switchTab('docs')">Documentos</button>
     <button class="tab${tab==='method'?' active':''}" onclick="switchTab('method')">Método</button>
     <button class="tab${tab==='analytics'?' active':''}" onclick="switchTab('analytics')">Analytics</button>
     <button class="tab${tab==='timer'?' active':''}" onclick="switchTab('timer')">Timer</button>
   </div>`;
   if(tab==='study')h+=renderStudy(stats);
+  else if(tab==='docs')h+=renderDocsTab();
   else if(tab==='method')h+=renderMethod();
   else if(tab==='analytics')h+=renderAnalytics(stats);
   else h+=renderTimer();
   document.getElementById('app').innerHTML=h;
   renderSyncBadge();
+  if(viewer.open) renderViewer();
+}
+
+function renderDocsTab(){
+  let h=`<div class="method-box">
+    <div class="method-title">Gestão de documentos</div>
+    <div class="method-text">Envie o PDF (texto selecionável) de cada matéria, ou cole um link. Uma vez enviado, o sistema abre o material direto do dia de estudo, guarda onde você parou e salva grifos/notas por página.</div>
+  </div>`;
+  DOC_SUBJECTS.forEach(key=>{
+    const d=ldDoc(key);const c=gc(key);
+    h+=`<div class="doc-row">
+      <div class="doc-row-top"><span class="doc-name" style="color:${c.tx}">${key}</span>
+      ${d?`<span class="doc-status ${d.type==='upload'?'up':'lk'}">${d.type==='upload'?'arquivo · pág. '+(d.lastPage||1)+(d.numPages?'/'+d.numPages:''):'link'}</span>`:`<span class="doc-status empty">sem material</span>`}</div>
+      <div class="doc-row-ctrls">
+        ${d&&d.type==='upload'?`<button class="doc-btn" onclick="openDocSubject('${key}',{mode:'study'})">Abrir</button>`:''}
+        <label class="doc-btn" style="cursor:pointer;">${d&&d.type==='upload'?'Substituir PDF':'Enviar PDF'}<input type="file" accept="application/pdf" style="display:none" onchange="uploadDocFile('${key}',event)"></label>
+        <input class="doc-link-input" type="text" placeholder="ou cole um link" value="${d&&d.type==='link'?d.link:''}" onchange="saveDocLink('${key}',this.value)">
+        ${d?`<button class="doc-btn danger" onclick="removeDoc('${key}')">Remover</button>`:''}
+      </div>
+      <div id="doc-upload-status-${slug(key)}" class="doc-upload-status"></div>
+    </div>`;
+  });
+  return h;
 }
 
 function renderMethod(){
@@ -510,11 +759,18 @@ function renderStudy(stats){
     reviews.forEach((rv,ri)=>{
       const rvSt=ldRv(ci,ri);
       const oDate=`${rv.originDate.getDate()}/${rv.originDate.getMonth()+1}`;
+      const rvKey=docKeyFor(rv.subject);const rvDoc=rvKey?ldDoc(rvKey):null;
+      const rvBlockSt=(rv.originEvIdx!=null)?ld(rv.originDay,rv.originEvIdx):{};
+      let rvBtn='';
+      if(rvDoc&&rvDoc.type==='upload'){
+        const fp=rvBlockSt.docStartPage||1;
+        rvBtn=`<button class="rv-check" style="width:auto;padding:0 8px;font-size:9px;" onclick="openDocSubject('${rvKey}',{di:${rv.originDay},ei:${rv.originEvIdx},mode:'review',forcePage:${fp}})">reabrir trecho</button>`;
+      }
       h+=`<div class="rv-item">
         <span class="rv-tag ${rv.cls}">${rv.tag}</span>
         <div style="flex:1"><div class="rv-mat" style="color:var(--warn-text)">${rv.subject}</div>
         <div class="rv-tip">${rv.tip}</div>
-        <div class="rv-origin">Estudado em ${oDate}</div></div>
+        <div class="rv-origin">Estudado em ${oDate}</div>${rvBtn}</div>
         <button class="rv-check${rvSt.done?' done':''}" onclick="toggleRv(${ci},${ri})">${rvSt.done?'&#10003;':''}</button>
       </div>`;
     });
@@ -527,11 +783,16 @@ function renderStudy(stats){
     if(dayTotal>0)h+=`<div style="font-size:11px;color:var(--text3);margin-bottom:8px;">${dayTotal} blocos${dayDone?` &middot; <span style="color:var(--done-border);font-weight:600">${dayDone}/${dayTotal} feitos</span>`:''}</div>`;
     day.events.forEach((ev,ei)=>{
       if(ev.isReview) return; // handled above
-      const c=gc(ev.label);const link=gl(ev.label);const st=ld(ci,ei);const done=st.done||false;
+      const c=gc(ev.label);const st=ld(ci,ei);const done=st.done||false;
+      const dKey=docKeyFor(ev.label);const dDoc=dKey?ldDoc(dKey):null;
+      let matBtn='';
+      if(dDoc&&dDoc.type==='upload') matBtn=`<button class="ev-link" style="background:${c.br};border:none;cursor:pointer;" onclick="openDocSubject('${dKey}',{di:${ci},ei:${ei},mode:'study'})">Abrir &nearr;</button>`;
+      else if(dDoc&&dDoc.type==='link') matBtn=`<a href="${dDoc.link}" target="_blank" class="ev-link" style="background:${c.br}">Link &nearr;</a>`;
+      else if(dKey) matBtn=`<button class="ev-link" style="background:#D6D3D1;border:none;cursor:pointer;" onclick="switchTab('docs')">+ material</button>`;
       h+=`<div class="ev-card${done?' completed':''}"><div style="display:flex;"><div class="ev-left" style="background:${done?'var(--done-border)':c.br}"></div>
         <div class="ev-body" style="flex:1;">
           <div class="ev-top"><span class="ev-time" style="color:${done?'var(--done-text)':c.tx}">${ev.time}</span>
-          ${link?`<a href="${link}" target="_blank" class="ev-link" style="background:${c.br}">PDF &nearr;</a>`:''}</div>
+          ${matBtn}</div>
           <div class="ev-title" style="color:${done?'var(--done-text)':c.tx}">${ev.label}</div>`;
 
       // Lei seca detail
@@ -624,7 +885,7 @@ window.startT=function(){if(!timerSec)timerSec=timerMode*60;timerRun=true;timerI
 window.pauseT=function(){clearInterval(timerInt);timerRun=false;render();};
 window.resetT=function(){clearInterval(timerInt);timerRun=false;timerSec=timerMode*60;render();};
 window.exportData=function(){const b=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`magistratura_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();};
-window.importData=function(evt){const f=evt.target.files[0];if(!f)return;const r=new FileReader();r.onload=async function(e){try{const d=JSON.parse(e.target.result);DB.blocks=d.blocks||{};DB.reviews=d.reviews||{};await setDoc(udoc(),DB);render();alert('Importado e sincronizado!');}catch(err){alert('Arquivo inválido.');}};r.readAsText(f);};
+window.importData=function(evt){const f=evt.target.files[0];if(!f)return;const r=new FileReader();r.onload=async function(e){try{const d=JSON.parse(e.target.result);DB.blocks=d.blocks||{};DB.reviews=d.reviews||{};DB.docs=d.docs||DB.docs||{};await setDoc(udoc(),DB);render();alert('Importado e sincronizado!');}catch(err){alert('Arquivo inválido.');}};r.readAsText(f);};
 
 // ========== AUTH / BOOTSTRAP ==========
 function renderLogin(mode, err){
